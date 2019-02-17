@@ -55,9 +55,44 @@ export default class WeTTy extends EventEmitter {
             .login(socket)
             .then((username: string) => {
               this.emit('debug', `username: ${username.trim()}`);
-              args[1] = `${username.trim()}@${args[1]}`;
-              this.emit('debug', `cmd : ${args.join(' ')}`);
-              return term.spawn(socket, args);
+
+              let connStr = username.trim();
+              let port = '22';
+
+              if (connStr.indexOf('@') === -1) {
+                socket.emit(
+                  'data',
+                  'Invalid connection string.\n\rDisconnected.'
+                );
+                socket.disconnect();
+                throw Error('Invalid connection string.');
+              }
+
+              let colonIndex = connStr.indexOf(':');
+              if (colonIndex !== -1) {
+                port = connStr.substr(colonIndex + 1);
+                connStr = connStr.substr(0, colonIndex).trim();
+              } else {
+                colonIndex = connStr.indexOf(' -p');
+                if (colonIndex !== -1) {
+                  port = connStr.substr(colonIndex + 3);
+                  connStr = connStr.substr(0, colonIndex).trim();
+                }
+              }
+
+              const connArgs = [
+                'ssh',
+                connStr,
+                '-t',
+                '-p',
+                port,
+                '-o PreferredAuthentications=password',
+                '-o StrictHostKeyChecking=no',
+                '-o UserKnownHostsFile=/dev/null',
+              ];
+
+              this.emit('debug', `cmd : ${connArgs.join(' ')}`);
+              return term.spawn(socket, connArgs);
             })
             .catch(() => this.disconnected());
         }

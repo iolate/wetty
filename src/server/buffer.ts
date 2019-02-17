@@ -1,6 +1,6 @@
 import { createInterface } from 'readline';
 
-ask('Enter your username');
+ask('Example: user@host[:22 or -p 22]\nConnect to');
 
 export default function ask(question: string): Promise<string> {
   const r = createInterface({
